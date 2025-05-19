@@ -33,7 +33,7 @@ model Order {
   status        Status
   tags          String[]  @default([])
   description   String?
-  Payments      Payment[]
+  payments      Payment[]
   scheduledDate DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
