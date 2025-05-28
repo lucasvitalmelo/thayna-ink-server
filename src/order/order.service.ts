@@ -17,29 +17,47 @@ export class OrderService {
   }
 
   async findAll() {
-    const data = await this.prismaService.order.findMany({
+    const orders = await this.prismaService.order.findMany({
       where: { NOT: { status: 'CONCLUDED' } },
+      orderBy: {
+        createdAt: 'desc',
+      },
       select: {
+        id: true,
         price: true,
         scheduledDate: true,
         tattooType: true,
-        payments: true,
-        customer: { select: { name: true, } },
-        tags: true
+        status: true,
+        createdAt: true,
+        customer: { select: { name: true, phone: true } },
+        tags: true,
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            description: true,
+          }
+        }
       },
     });
 
-    const formatPriceAndPayments = data.map(
-      order => (
-        {
-          ...order, price: order.price * 100, // formart price
-          payments: order.payments.map(
-            payment => (
-              { ...payment, amount: payment.amount * 100 }
-            ))
-        }))
+    const ordersWithPaid = orders.map(
+      order => ({
+        id: order.id,
+        price: order.price / 100,
+        scheduledDate: order.scheduledDate,
+        tattooType: order.tattooType,
+        tags: order.tags,
+        customer: order.customer.name,
+        phone: order.customer.phone,
+        status: order.status,
+        paid: order.payments.reduce(
+          (sum, payment) => sum + payment.amount, 0
+        ),
+      }));
 
-    return formatPriceAndPayments
+    return ordersWithPaid;
+
   }
 
   findOne(id: number) {
@@ -48,6 +66,7 @@ export class OrderService {
       include: {
         customer: {
           select: {
+            id: true,
             name: true,
             age: true,
             email: true,
